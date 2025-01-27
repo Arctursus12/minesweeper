@@ -5,8 +5,8 @@
 #include "array_grid_math.h"
 using namespace std;
 
-void map_setup_basic(int array[10][10]);
-void add_adjacent_counts(int array[10][10]);
+void map_setup_basic(int array[8][8]);
+void add_adjacent_counts(int array[8][8]);
 
 void initialize_colors(){
     start_color();
@@ -26,13 +26,13 @@ int main(){
 
     initialize_colors();
 
-    int grid_size = 10;
+    int grid_size = 8;
     int startx = 0, starty = 0;
-    int box_height = 3, box_width = 6;
+    int box_height = 2, box_width = 4;
     int spacing = 1;
     int current_row = 0, current_col = 0;
-    int grid[10][10];
-    bool revealed[10][10] = {{false}};
+    int grid[8][8];
+    bool revealed[8][8] = {{false}};
     bool game_over = false;
 
     map_setup_basic(grid);
