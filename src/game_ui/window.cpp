@@ -24,7 +24,7 @@ int main(){
     initialize_colors();
 
     const int rows = 8;
-    const int cols = 15;
+    const int cols = 16;
     int startx = 0, starty = 0;
     int box_height = 2, box_width = 4;
     int spacing = 1; 
