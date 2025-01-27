@@ -11,6 +11,7 @@ void initialize_colors(){
     init_pair(2, COLOR_WHITE, COLOR_BLUE);
     init_pair(3, COLOR_WHITE, COLOR_BLACK);
     init_pair(4, COLOR_WHITE, COLOR_RED);
+    init_pair(5, COLOR_WHITE, COLOR_GREEN);
 }
 
 int main(){
@@ -20,7 +21,6 @@ int main(){
     keypad(stdscr, TRUE);
     curs_set(0);
     nodelay(stdscr, TRUE);
-
     initialize_colors();
 
     const int rows = 8;
@@ -32,6 +32,8 @@ int main(){
     int grid[rows][cols];
     bool revealed[rows][cols] = {{false}};
     bool game_over = false;
+    bool game_won = false;
+    int non_bomb_cells = rows * cols - 8;
 
     map_setup_basic(grid);
     add_adjacent_counts(grid);
@@ -41,7 +43,7 @@ int main(){
 
     int ch;
     while((ch=getch()) != 'q'){
-        if(ch != ERR && !game_over){
+        if(ch != ERR && !game_over && !game_won){
             switch(ch){
                 case KEY_UP: current_row = (current_row > 0) ? current_row - 1 : current_row; break;
                 case KEY_DOWN: current_row = (current_row < rows - 1) ? current_row + 1 : current_row; break;
@@ -50,19 +52,24 @@ int main(){
                 case 10: // Enter key
                     if(grid[current_row][current_col] == -1){
                         game_over = true;
-                    } else {
+                    } else if(!revealed[current_row][current_col]){
                         revealed[current_row][current_col] = true;
+                        non_bomb_cells--;
+                        if(non_bomb_cells == 0){
+                            game_won = true;
+                        }
                     }
                     break;
             }
         }
-
         for(int row=0; row<rows; ++row){
             for(int col=0; col<cols; ++col){
                 int start_y = row * (box_height + spacing);
                 int start_x = col * (box_width + spacing);
                 
-                if(game_over){
+                if(game_won){
+                    wattron(win, COLOR_PAIR(5));
+                } else if(game_over){
                     wattron(win, COLOR_PAIR(4));
                 } else if(row == current_row && col == current_col){
                     wattron(win, COLOR_PAIR(2));
@@ -92,12 +99,11 @@ int main(){
                 wattroff(win, COLOR_PAIR(2));
                 wattroff(win, COLOR_PAIR(3));
                 wattroff(win, COLOR_PAIR(4));
+                wattroff(win, COLOR_PAIR(5));
             }
         }
-
         wrefresh(win);
     }
-
     endwin();
     return 0;
 }
