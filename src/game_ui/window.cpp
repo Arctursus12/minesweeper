@@ -32,6 +32,31 @@ void reveal_adjacent(int row, int col, int grid[8][16], bool revealed[8][16], in
     }
 }
 
+void reset_game(int grid[8][16], bool revealed[8][16], bool flagged[8][16], 
+    bool &game_over, bool &game_won, int &flags_used, int &non_bomb_cells, set<pair<int, int>> &bomb_locations) {
+    map_setup_basic(grid);
+    add_adjacent_counts(grid);
+    bomb_locations.clear();
+    
+    const int rows = 8;
+    const int cols = 16;
+    
+    for(int row = 0; row < rows; ++row){
+        for(int col = 0; col < cols; ++col){
+            revealed[row][col] = false;
+            flagged[row][col] = false;
+            if(grid[row][col] == -1) {
+                bomb_locations.insert(make_pair(row, col));
+            }
+        }
+    }
+    
+    game_over = false;
+    game_won = false;
+    flags_used = 0;
+    non_bomb_cells = rows * cols - bomb_locations.size();
+}
+
 int main(){
     initscr();
     cbreak();
@@ -53,31 +78,23 @@ int main(){
     bool game_over = false;
     bool game_won = false;    
     int flags_used = 0;
-    map_setup_basic(grid);
-    add_adjacent_counts(grid);
-
     set<pair<int, int>> bomb_locations;
-    for(int row = 0; row < rows; ++row){
-        for(int col = 0; col < cols; ++col){
-            if(grid[row][col] == -1){
-                bomb_locations.insert(make_pair(row, col));
-            }
-        }
-    }
-
     int non_bomb_cells = rows * cols - bomb_locations.size();
     WINDOW *win = newwin(rows * (box_height + spacing) + 1, cols * (box_width + spacing) + 1, starty, startx);
     
+    // Initial setup
+    reset_game(grid, revealed, flagged, game_over, game_won, flags_used, non_bomb_cells, bomb_locations);
+    
     int ch;
     while((ch=getch()) != 'q'){
-        if(ch != ERR && !game_over && !game_won){
+        if(ch != ERR){
             switch(ch){
                 case KEY_UP: current_row = (current_row > 0) ? current_row - 1 : current_row; break;
                 case KEY_DOWN: current_row = (current_row < rows - 1) ? current_row + 1 : current_row; break;
                 case KEY_LEFT: current_col = (current_col > 0) ? current_col - 1 : current_col; break;
                 case KEY_RIGHT: current_col = (current_col < cols - 1) ? current_col + 1 : current_col; break;
                 case 10: // Enter key
-                    if(!flagged[current_row][current_col] && !revealed[current_row][current_col]){
+                    if(!flagged[current_row][current_col] && !revealed[current_row][current_col] && !game_over && !game_won){
                         if(bomb_locations.count(make_pair(current_row, current_col))){
                             game_over = true;
                         } else {
@@ -90,7 +107,7 @@ int main(){
                     }
                     break;
                 case ' ': // Spacebar key
-                    if(!revealed[current_row][current_col]){
+                    if(!revealed[current_row][current_col] && !game_won && !game_over){
                         if(flagged[current_row][current_col]){
                             flagged[current_row][current_col] = false;
                             flags_used--;
@@ -100,8 +117,13 @@ int main(){
                         }
                     }
                     break;
+                case 'r':
+                case 'R':
+                    reset_game(grid, revealed, flagged, game_over, game_won, flags_used, non_bomb_cells, bomb_locations);
+                    current_row = 0;
+                    current_col = 0;
+                    break;
             }
-
             if(flags_used == bomb_locations.size()){
                 game_won = true;
                 for(auto& bomb : bomb_locations){
@@ -131,7 +153,7 @@ int main(){
                 } else {
                     wattron(win, COLOR_PAIR(1));
                 }
-
+                
                 mvwaddch(win, start_y, start_x, ACS_ULCORNER);
                 mvwaddch(win, start_y + box_height, start_x, ACS_LLCORNER);
                 mvwaddch(win, start_y, start_x + box_width, ACS_URCORNER);
@@ -140,7 +162,7 @@ int main(){
                 mvwhline(win, start_y + box_height, start_x + 1, ACS_HLINE, box_width - 1);
                 mvwvline(win, start_y + 1, start_x, ACS_VLINE, box_height - 1);
                 mvwvline(win, start_y + 1, start_x + box_width, ACS_VLINE, box_height - 1);
-
+                
                 if(flagged[row][col]){
                     mvwprintw(win, start_y + box_height / 2, start_x + box_width / 2, "?");
                 } else if(revealed[row][col] || game_over){
