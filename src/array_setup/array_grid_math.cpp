@@ -10,7 +10,7 @@ void map_setup_basic(int array[8][16]){
         }
     }
     std::srand(std::time(0));
-  
+
     int bomb_count = 0;
     while(bomb_count < 12){
         int random_row = std::rand() % 8;
@@ -40,7 +40,7 @@ void add_adjacent_counts(int array[8][16]){
     for(int row = 0; row < 8; ++row){
         for(int col = 0; col < 16; ++col){
             if(array[row][col] == -1){
-                for(int i = 0; i < 12; ++i){
+                for(int i = 0; i < 8; ++i){
                     int newRow = row + directions[i][0];
                     int newCol = col + directions[i][1];
                     if(newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 16){
