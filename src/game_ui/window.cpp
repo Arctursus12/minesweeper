@@ -14,6 +14,22 @@ void initialize_colors(){
     init_pair(5, COLOR_WHITE, COLOR_GREEN);
 }
 
+void reveal_adjacent(int row, int col, int grid[8][16], bool revealed[8][16], int rows, int cols) {
+    if(row < 0 || row >= rows || col < 0 || col >= cols) return;
+    if(revealed[row][col]) return;
+    revealed[row][col] = true;
+    if(grid[row][col] != 0) return;
+
+    int directions[8][2] = {
+        {-1, 0}, {1, 0}, {0, -1}, {0, 1},  // Up, Down, Left, Right
+        {-1, -1}, {-1, 1}, {1, -1}, {1, 1} // Top-Left, Top-Right, Bottom-Left, Bottom-Right
+    };
+
+    for(int i = 0; i < 8; ++i){
+        reveal_adjacent(row + directions[i][0], col + directions[i][1], grid, revealed, rows, cols);
+    }
+}
+
 int main(){
     initscr();
     cbreak();
@@ -40,7 +56,7 @@ int main(){
 
     WINDOW *win = newwin(rows * (box_height + spacing) + 1,
                          cols * (box_width + spacing) + 1, starty, startx);
-
+                         
     int ch;
     while((ch=getch()) != 'q'){
         if(ch != ERR && !game_over && !game_won){
@@ -53,7 +69,7 @@ int main(){
                     if(grid[current_row][current_col] == -1){
                         game_over = true;
                     } else if(!revealed[current_row][current_col]){
-                        revealed[current_row][current_col] = true;
+                        reveal_adjacent(current_row, current_col, grid, revealed, rows, cols);
                         non_bomb_cells--;
                         if(non_bomb_cells == 0){
                             game_won = true;
