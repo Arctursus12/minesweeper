@@ -13,6 +13,7 @@ void initialize_colors(){
     init_pair(3, COLOR_WHITE, COLOR_BLACK);
     init_pair(4, COLOR_WHITE, COLOR_RED);
     init_pair(5, COLOR_WHITE, COLOR_GREEN);
+    init_pair(6, COLOR_WHITE, COLOR_YELLOW);
 }
 
 void reveal_adjacent(int row, int col, int grid[8][16], bool revealed[8][16], int rows, int cols) {
@@ -48,8 +49,10 @@ int main(){
     int current_row = 0, current_col = 0;
     int grid[rows][cols];
     bool revealed[rows][cols] = {{false}};
+    bool flagged[rows][cols] = {{false}};
     bool game_over = false;
     bool game_won = false;    
+    int flags_used = 0;
     map_setup_basic(grid);
     add_adjacent_counts(grid);
 
@@ -57,14 +60,14 @@ int main(){
     for(int row = 0; row < rows; ++row){
         for(int col = 0; col < cols; ++col){
             if(grid[row][col] == -1){
-                bomb_locations.insert({row, col});
+                bomb_locations.insert(make_pair(row, col));
             }
         }
     }
 
     int non_bomb_cells = rows * cols - bomb_locations.size();
     WINDOW *win = newwin(rows * (box_height + spacing) + 1, cols * (box_width + spacing) + 1, starty, startx);
-
+    
     int ch;
     while((ch=getch()) != 'q'){
         if(ch != ERR && !game_over && !game_won){
@@ -74,24 +77,50 @@ int main(){
                 case KEY_LEFT: current_col = (current_col > 0) ? current_col - 1 : current_col; break;
                 case KEY_RIGHT: current_col = (current_col < cols - 1) ? current_col + 1 : current_col; break;
                 case 10: // Enter key
-                    if(bomb_locations.count({current_row, current_col})){
-                        game_over = true;
-                    } else if(!revealed[current_row][current_col]){
-                        reveal_adjacent(current_row, current_col, grid, revealed, rows, cols);
-                        non_bomb_cells--;
-                        if(non_bomb_cells == 0){
-                            game_won = true;
+                    if(!flagged[current_row][current_col] && !revealed[current_row][current_col]){
+                        if(bomb_locations.count(make_pair(current_row, current_col))){
+                            game_over = true;
+                        } else {
+                            reveal_adjacent(current_row, current_col, grid, revealed, rows, cols);
+                            non_bomb_cells--;
+                            if(non_bomb_cells == 0){
+                                game_won = true;
+                            }
+                        }
+                    }
+                    break;
+                case ' ': // Spacebar key
+                    if(!revealed[current_row][current_col]){
+                        if(flagged[current_row][current_col]){
+                            flagged[current_row][current_col] = false;
+                            flags_used--;
+                        } else if(flags_used < bomb_locations.size()){
+                            flagged[current_row][current_col] = true;
+                            flags_used++;
                         }
                     }
                     break;
             }
+
+            if(flags_used == bomb_locations.size()){
+                game_won = true;
+                for(auto& bomb : bomb_locations){
+                    if(!flagged[bomb.first][bomb.second]){
+                        game_won = false;
+                        break;
+                    }
+                }
+            }
         }
+
         for(int row = 0; row < rows; ++row){
             for(int col = 0; col < cols; ++col){
                 int start_y = row * (box_height + spacing);
                 int start_x = col * (box_width + spacing);
                 
-                if(game_won){
+                if(flagged[row][col]){
+                    wattron(win, COLOR_PAIR(6));
+                } else if(game_won){
                     wattron(win, COLOR_PAIR(5));
                 } else if(game_over){
                     wattron(win, COLOR_PAIR(4));
@@ -112,11 +141,14 @@ int main(){
                 mvwvline(win, start_y + 1, start_x, ACS_VLINE, box_height - 1);
                 mvwvline(win, start_y + 1, start_x + box_width, ACS_VLINE, box_height - 1);
 
-                if(revealed[row][col] || game_over){
-                    if(grid[row][col] == -1)
+                if(flagged[row][col]){
+                    mvwprintw(win, start_y + box_height / 2, start_x + box_width / 2, "?");
+                } else if(revealed[row][col] || game_over){
+                    if(grid[row][col] == -1){
                         mvwprintw(win, start_y + box_height / 2, start_x + box_width / 2, "X");
-                    else if(grid[row][col] > 0)
+                    } else if(grid[row][col] > 0) {
                         mvwprintw(win, start_y + box_height / 2, start_x + box_width / 2, "%d", grid[row][col]);
+                    }
                 }
                 
                 wattroff(win, COLOR_PAIR(1));
@@ -124,6 +156,7 @@ int main(){
                 wattroff(win, COLOR_PAIR(3));
                 wattroff(win, COLOR_PAIR(4));
                 wattroff(win, COLOR_PAIR(5));
+                wattroff(win, COLOR_PAIR(6));
             }
         }
         wrefresh(win);
