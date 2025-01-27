@@ -18,6 +18,6 @@ TEST_CASE("Testing map_setup_basic: check number and positions of bombs"){
             }
         }
     }
-    CHECK(bomb_count == 8);
-    CHECK(bomb_positions.size() == 8);
+    CHECK(bomb_count == 10);
+    CHECK(bomb_positions.size() == 10);
 }

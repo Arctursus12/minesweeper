@@ -1,4 +1,12 @@
 #include <ncurses.h>
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
+#include <array_grid_math.h>
+using namespace std;
+
+void map_setup_basic(int array[10][10]);
+void add_adjacent_counts(int array[10][10]);
 
 void initialize_colors(){
     start_color();
@@ -13,14 +21,18 @@ int main(){
     keypad(stdscr, TRUE);
     curs_set(0);
     nodelay(stdscr, TRUE);
-
+    
     initialize_colors();
 
     int grid_size = 10; 
     int startx = 0, starty = 0;
-    int box_height = 5, box_width = 10;
-    int spacing = 1;  // Reduced spacing between boxes
+    int box_height = 3, box_width = 6;
+    int spacing = 1;
     int current_row = 0, current_col = 0;
+    int grid[10][10];
+
+    map_setup_basic(grid);
+    add_adjacent_counts(grid);
 
     WINDOW *win = newwin(grid_size * (box_height + spacing) + 1,
                          grid_size * (box_width + spacing) + 1, starty, startx);
@@ -47,7 +59,6 @@ int main(){
                     wattron(win, COLOR_PAIR(1));
                 }
                 
-                // Draw the full box
                 mvwaddch(win, start_y, start_x, ACS_ULCORNER);
                 mvwaddch(win, start_y + box_height, start_x, ACS_LLCORNER);
                 mvwaddch(win, start_y, start_x + box_width, ACS_URCORNER);
@@ -56,6 +67,11 @@ int main(){
                 mvwhline(win, start_y + box_height, start_x + 1, ACS_HLINE, box_width - 1);
                 mvwvline(win, start_y + 1, start_x, ACS_VLINE, box_height - 1);
                 mvwvline(win, start_y + 1, start_x + box_width, ACS_VLINE, box_height - 1);
+                
+                if(grid[row][col] == -1)
+                    mvwprintw(win, start_y + box_height / 2, start_x + box_width / 2, "X");
+                else if(grid[row][col] > 0)
+                    mvwprintw(win, start_y + box_height / 2, start_x + box_width / 2, "%d", grid[row][col]);
                 
                 wattroff(win, COLOR_PAIR(1));
                 wattroff(win, COLOR_PAIR(2));
